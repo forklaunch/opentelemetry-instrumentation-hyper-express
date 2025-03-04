@@ -139,7 +139,11 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
 
   private _wrapMiddleware(middleware: MiddlewareHandler) {
     return (
-      req: Request & { span?: Span; contractDetails?: { name: string } },
+      req: Request & {
+        span?: Span;
+        contractDetails?: { name: string };
+        context?: { correlationId: string };
+      },
       res: Response,
       next: MiddlewareNext
     ) => {
@@ -150,6 +154,7 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
         );
         const attributes: Attributes = {
           "api.name": req.contractDetails?.name ?? "undefined",
+          "correlation.id": req.context?.correlationId,
           [SEMATTRS_HTTP_METHOD]: req.method,
           [SEMATTRS_HTTP_URL]: `${req.protocol}://${req.headers.host}${req.url}`,
           [SEMATTRS_HTTP_TARGET]: req.path,
