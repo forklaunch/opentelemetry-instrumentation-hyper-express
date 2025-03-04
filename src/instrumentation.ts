@@ -20,6 +20,7 @@ import {
 import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_HTTP_ROUTE,
+  ATTR_SERVICE_NAME,
   SEMATTRS_HTTP_FLAVOR,
   SEMATTRS_HTTP_HOST,
   SEMATTRS_HTTP_METHOD,
@@ -96,6 +97,10 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
       req.span = this.tracer.startSpan(`${req.method} ${req.path}`, {
         root: true,
         attributes: {
+          [ATTR_SERVICE_NAME]:
+            process.env.OTEL_SERVICE_NAME ??
+            process.env.SERVICE_NAME ??
+            "unknown",
           [SEMATTRS_HTTP_FLAVOR]: "1.1",
           [SEMATTRS_HTTP_HOST]: req.headers.host,
           [SEMATTRS_HTTP_METHOD]: req.method,
