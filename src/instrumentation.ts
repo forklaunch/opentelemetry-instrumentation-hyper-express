@@ -18,12 +18,13 @@ import {
   InstrumentationNodeModuleDefinition,
 } from "@opentelemetry/instrumentation";
 import {
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_HTTP_ROUTE,
   SEMATTRS_HTTP_FLAVOR,
   SEMATTRS_HTTP_HOST,
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH,
   SEMATTRS_HTTP_ROUTE,
-  SEMATTRS_HTTP_STATUS_CODE,
   SEMATTRS_HTTP_TARGET,
   SEMATTRS_HTTP_URL,
   SEMATTRS_HTTP_USER_AGENT,
@@ -85,6 +86,9 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
       contractDetails?: {
         name: string;
       };
+      context?: {
+        correlationId: string;
+      };
     },
     res: Response
   ) {
@@ -92,7 +96,6 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
       req.span = this.tracer.startSpan(`${req.method} ${req.path}`, {
         root: true,
         attributes: {
-          "service.name": process.env.SERVICE_NAME ?? "unknown",
           [SEMATTRS_HTTP_FLAVOR]: "1.1",
           [SEMATTRS_HTTP_HOST]: req.headers.host,
           [SEMATTRS_HTTP_METHOD]: req.method,
@@ -106,8 +109,8 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
       res.on("finish", () => {
         if (req.span) {
           req.span.setAttributes({
-            [SEMATTRS_HTTP_ROUTE]: req.originalPath,
-            [SEMATTRS_HTTP_STATUS_CODE]: res.statusCode,
+            [ATTR_HTTP_ROUTE]: req.originalPath,
+            [ATTR_HTTP_RESPONSE_STATUS_CODE]: res.statusCode,
             "http.status_text": res.statusMessage,
             "error.message": res.locals.errorMessage || "Unknown error",
           });
@@ -117,8 +120,8 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
               message: `HTTP ${res.statusCode} error occurred`,
             });
             req.span.addEvent("error", {
-              [SEMATTRS_HTTP_ROUTE]: req.originalPath,
-              [SEMATTRS_HTTP_STATUS_CODE]: res.statusCode,
+              [ATTR_HTTP_ROUTE]: req.originalPath,
+              [ATTR_HTTP_RESPONSE_STATUS_CODE]: res.statusCode,
               "http.status_text": res.statusMessage,
               "error.message": res.locals.errorMessage || "Unknown error",
             });
@@ -173,19 +176,24 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
 
   private _wrapHandler(path: string, handler: MiddlewareHandler) {
     return (
-      req: Request & { span?: Span; contractDetails?: { name: string } },
+      req: Request & {
+        span?: Span;
+        contractDetails?: { name: string };
+        context?: { correlationId: string };
+      },
       res: Response,
       next: MiddlewareNext
     ) => {
       this._createTopLevelSpan(req, res);
       return context.with(trace.setSpan(context.active(), req.span!), () => {
-        req.span?.setAttribute(
-          "api.name",
-          req.contractDetails?.name ?? "undefined"
-        );
+        req.span?.setAttributes({
+          "api.name": req.contractDetails?.name ?? "undefined",
+          "correlation.id": req.context?.correlationId,
+        });
         const span = this.tracer.startSpan(`request handler - ${path}`);
         const attributes: Attributes = {
           "api.name": req.contractDetails?.name ?? "undefined",
+          "correlation.id": req.context?.correlationId,
           [SEMATTRS_HTTP_METHOD]: req.method,
           [SEMATTRS_HTTP_URL]: `${req.protocol}://${req.headers.host}${req.url}`,
           [SEMATTRS_HTTP_TARGET]: req.path,
