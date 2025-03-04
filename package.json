@@ -1,6 +1,6 @@
 {
   "name": "@forklaunch/opentelemetry-instrumentation-hyper-express",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "OpenTelemetry instrumentation for `hyper-express` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

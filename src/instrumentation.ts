@@ -139,7 +139,7 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
 
   private _wrapMiddleware(middleware: MiddlewareHandler) {
     return (
-      req: Request & { span?: Span },
+      req: Request & { span?: Span; contractDetails?: { name: string } },
       res: Response,
       next: MiddlewareNext
     ) => {
@@ -149,6 +149,7 @@ export class HyperExpressInstrumentation extends InstrumentationBase {
           `middleware - ${middleware.name || "<anonymous>"}`
         );
         const attributes: Attributes = {
+          "api.name": req.contractDetails?.name ?? "undefined",
           [SEMATTRS_HTTP_METHOD]: req.method,
           [SEMATTRS_HTTP_URL]: `${req.protocol}://${req.headers.host}${req.url}`,
           [SEMATTRS_HTTP_TARGET]: req.path,
