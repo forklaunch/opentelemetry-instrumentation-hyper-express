@@ -1,6 +1,6 @@
 {
   "name": "@forklaunch/opentelemetry-instrumentation-hyper-express",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "OpenTelemetry instrumentation for `hyper-express` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -58,7 +58,6 @@
     "typescript": "5.8.2"
   },
   "dependencies": {
-    "@opentelemetry/core": "^1.30.1",
     "@opentelemetry/instrumentation": "^0.57.2",
     "@opentelemetry/semantic-conventions": "^1.30.0",
     "@types/busboy": "^1.5.4"
